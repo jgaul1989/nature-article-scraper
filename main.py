@@ -17,6 +17,16 @@ def parse_articles(html_content):
     return soup.find_all("article")
 
 
+def set_next_url_page(base_url, html_content, page_number: int):
+    soup = BeautifulSoup(html_content, 'html.parser')
+    li_tag = soup.find("li", {"class": "c-pagination__item", "data-page": str(page_number)})
+    a_tag = li_tag.find("a")
+
+    if a_tag and a_tag.has_attr('href'):
+        full_url = urljoin(base_url, a_tag['href'])
+        return full_url
+
+
 def extract_news_links(articles, base_url):
     article_links = []
     for article in articles:
@@ -28,14 +38,20 @@ def extract_news_links(articles, base_url):
     return article_links
 
 
-def get_news_articles():
-    url = "https://www.nature.com/nature/articles?sort=PubDate&year=2020&page=3"
-    html_content = fetch_webpage(url)
-    if html_content:
-        articles = parse_articles(html_content)
-        return extract_news_links(articles, url)
-    else:
-        return []
+def get_news_articles(pages: int):
+    url = "https://www.nature.com/nature/articles?sort=PubDate&year=2020"
+
+    curr_page = 1
+    article_links = []
+    while curr_page <= pages:
+        html_content = fetch_webpage(url)
+        if html_content:
+            articles = parse_articles(html_content)
+            article_links.extend(extract_news_links(articles, url))
+        curr_page += 1
+        url = set_next_url_page(url, html_content, curr_page)
+
+    return article_links
 
 
 def get_article_information(articles):
@@ -58,6 +74,12 @@ def save_article_information(title, teaser):
         file.write(binary_str)
 
 
+def get_user_params():
+    num_pages = int(input(""))
+    return num_pages
+
+
 if __name__ == "__main__":
-    news_articles = get_news_articles()
+    pages_to_parse = get_user_params()
+    news_articles = get_news_articles(pages_to_parse)
     get_article_information(news_articles)
