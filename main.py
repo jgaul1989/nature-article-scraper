@@ -20,21 +20,21 @@ def parse_articles(html_content):
 def set_next_url_page(base_url, html_content, page_number: int):
     soup = BeautifulSoup(html_content, 'html.parser')
     li_tag = soup.find("li", {"class": "c-pagination__item", "data-page": str(page_number)})
-    a_tag = li_tag.find("a")
+    return extract_link_from_tag(li_tag, base_url)
 
-    if a_tag and a_tag.has_attr('href'):
-        full_url = urljoin(base_url, a_tag['href'])
-        return full_url
+
+def extract_link_from_tag(tag, base_url):
+    a_tag = tag.find("a")
+    full_url = urljoin(base_url, a_tag['href'])
+    return full_url
 
 
 def extract_news_links(articles, base_url):
     article_links = []
     for article in articles:
         if article.find('span', string='News'):
-            a_tag = article.find('a')
-            if a_tag and a_tag.has_attr('href'):
-                full_url = urljoin(base_url, a_tag['href'])
-                article_links.append(full_url)
+            full_url = extract_link_from_tag(article, base_url)
+            article_links.append(full_url)
     return article_links
 
 
