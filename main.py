@@ -95,14 +95,31 @@ def save_article_information(title, body, page_number):
         file.write(binary_str)
 
 
-def get_user_params():
-    num_pages = int(input(""))
-    article_type = input("")
+def get_user_input():
+    valid_article_types = ["News", "Research Highlight", "News & Views", "News Feature"]
+    num_pages = None
+
+    while num_pages is None:
+        try:
+            num_pages_input = input("Enter the number of pages to parse: ")
+            num_pages = int(num_pages_input)
+            if num_pages <= 0:
+                print("Please enter a positive integer for the number of pages.")
+                num_pages = None
+        except ValueError:
+            print("Invalid input. Please enter a valid integer for the number of pages.")
+
+    article_type = None
+    while article_type not in valid_article_types:
+        article_type = input(f"Enter the article type to filter ({', '.join(valid_article_types)}): ")
+        if article_type not in valid_article_types:
+            print(f"Invalid article type. Please choose from {', '.join(valid_article_types)}.")
+
     return num_pages, article_type
 
 
 if __name__ == "__main__":
-    pages_to_parse, article_category = get_user_params()
+    pages_to_parse, article_category = get_user_input()
     news_articles = get_news_articles(pages_to_parse, article_category)
     get_article_information(news_articles, article_category)
 
