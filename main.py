@@ -1,9 +1,11 @@
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
+import os
 
 
 def fetch_webpage(url):
+    print(url)
     try:
         response = requests.get(url)
         return response.content
@@ -48,6 +50,7 @@ def get_news_articles(pages: int, article_type: str):
         if html_content:
             articles = parse_articles(html_content)
             article_links.extend(extract_news_links(articles, url, article_type))
+            article_links.append(curr_page)
         curr_page += 1
         url = set_next_url_page(url, html_content, curr_page)
 
@@ -55,12 +58,16 @@ def get_news_articles(pages: int, article_type: str):
 
 
 def get_article_information(articles, article_type):
+    page_num = 1
     for article in articles:
-        html_content = fetch_webpage(article)
-        soup = BeautifulSoup(html_content, 'html.parser')
-        body = get_article_body(soup, article_type)
-        title = soup.find("h1", class_="c-article-magazine-title").get_text()
-        save_article_information(title, body)
+        if article != page_num:
+            html_content = fetch_webpage(article)
+            soup = BeautifulSoup(html_content, 'html.parser')
+            body = get_article_body(soup, article_type)
+            title = soup.find("h1", class_="c-article-magazine-title").get_text()
+            save_article_information(title, body, page_num)
+        else:
+            page_num += 1
 
 
 def get_article_body(soup_content, article_type):
@@ -72,13 +79,18 @@ def get_article_body(soup_content, article_type):
             return soup_content.find("div", {"class": "c-article-body main-content"}).get_text()
 
 
-def save_article_information(title, body):
+def save_article_information(title, body, page_number):
     formatted_title = title.replace(' ', '_').strip()
     translator = str.maketrans('', '', ".?!")
     formatted_title = formatted_title.translate(translator)
     filename = formatted_title + '.txt'
 
-    with open(filename, "wb") as file:
+    path = os.getcwd() + f"/Page_{page_number}"
+    if not os.path.exists(path):
+        os.mkdir(path)
+    file_path = path + '/' + filename
+
+    with open(file_path, "wb") as file:
         binary_str = body.strip().encode("utf-8")
         file.write(binary_str)
 
@@ -93,3 +105,4 @@ if __name__ == "__main__":
     pages_to_parse, article_category = get_user_params()
     news_articles = get_news_articles(pages_to_parse, article_category)
     get_article_information(news_articles, article_category)
+
