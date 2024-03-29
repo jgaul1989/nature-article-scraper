@@ -2,27 +2,33 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 import os
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 
-def fetch_webpage(url):
-    print(url)
+def fetch_webpage(url: str):
+    logging.info(f"Fetching webpage: {url}")
     try:
         response = requests.get(url)
+        response.raise_for_status()
         return response.content
     except requests.exceptions.RequestException as e:
-        print(f"Error fetching the webpage: {e}")
-        return None
+        logging.error(f"Error fetching the webpage: {e}")
+        return ""
 
 
-def parse_articles(html_content):
+def parse_articles(html_content: str):
     soup = BeautifulSoup(html_content, 'html.parser')
     return soup.find_all("article")
 
 
-def set_next_url_page(base_url, html_content, page_number: int):
+def get_next_page_url(base_url: str, html_content: str, page_number: int) -> str:
     soup = BeautifulSoup(html_content, 'html.parser')
     li_tag = soup.find("li", {"class": "c-pagination__item", "data-page": str(page_number)})
-    return extract_link_from_tag(li_tag, base_url)
+    if li_tag:
+        return extract_link_from_tag(li_tag, base_url)
+    return ""
 
 
 def extract_link_from_tag(tag, base_url):
@@ -52,7 +58,7 @@ def get_news_articles(pages: int, article_type: str):
             article_links.extend(extract_news_links(articles, url, article_type))
             article_links.append(curr_page)
         curr_page += 1
-        url = set_next_url_page(url, html_content, curr_page)
+        url = get_next_page_url(url, html_content, curr_page)
 
     return article_links
 
