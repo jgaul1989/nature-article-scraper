@@ -37,17 +37,18 @@ def extract_link_from_tag(tag, base_url):
     return full_url
 
 
-def extract_news_links(articles, base_url, article_type):
+def fetch_article_links(articles, base_url: str, article_type: str):
     article_links = []
     for article in articles:
         if article.find('span', string=article_type):
             full_url = extract_link_from_tag(article, base_url)
-            article_links.append(full_url)
+            if full_url:
+                article_links.append(full_url)
     return article_links
 
 
-def get_news_articles(pages: int, article_type: str):
-    url = "https://www.nature.com/nature/articles?sort=PubDate&year=2020"
+def scrape_nature_website(pages: int, article_type: str):
+    url = "https://www.nature.com/nature/articles?sort=PubDate&year=2023"
 
     curr_page = 1
     article_links = []
@@ -55,7 +56,7 @@ def get_news_articles(pages: int, article_type: str):
         html_content = fetch_webpage(url)
         if html_content:
             articles = parse_articles(html_content)
-            article_links.extend(extract_news_links(articles, url, article_type))
+            article_links.extend(fetch_article_links(articles, url, article_type))
             article_links.append(curr_page)
         curr_page += 1
         url = get_next_page_url(url, html_content, curr_page)
@@ -77,7 +78,7 @@ def get_article_information(articles, article_type):
 
 
 def get_article_body(soup_content, article_type):
-    article_teasers = ["News", "Research Highlight", "News & Views", "News Feature"]
+    article_teasers = ["News", "Research Highlight", "News & Views"]
     if article_type in article_teasers:
         try:
             return soup_content.find("p", {"class": "article__teaser"}).get_text()
@@ -102,7 +103,7 @@ def save_article_information(title, body, page_number):
 
 
 def get_user_input():
-    valid_article_types = ["News", "Research Highlight", "News & Views", "News Feature"]
+    valid_article_types = ["News", "Research Highlight", "News & Views"]
     num_pages = None
 
     while num_pages is None:
@@ -126,6 +127,6 @@ def get_user_input():
 
 if __name__ == "__main__":
     pages_to_parse, article_category = get_user_input()
-    news_articles = get_news_articles(pages_to_parse, article_category)
+    news_articles = scrape_nature_website(pages_to_parse, article_category)
     get_article_information(news_articles, article_category)
 
